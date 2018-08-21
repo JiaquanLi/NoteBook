@@ -1,0 +1,4 @@
+1.打开网站http://tool.chinaz.com/dns/?type=1&host=github.com&ip=
+2.输入github.com
+3.查看延迟最低的一个TTL
+4.修改C:\Windows\System32\drivers\etc\hosts 在最后 加入 例如:13.250.177.223 github.com
