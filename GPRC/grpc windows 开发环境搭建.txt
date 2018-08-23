@@ -1,0 +1,81 @@
+GPRC 项目源代码编译
+1. download source code from git
+2. install go
+3. install perl
+4. using cmake gui to create VS project
+
+GRPC 工程编译：
+1.现在grpc源代码: git clone https://github.com/grpc/grpc.git
+2.在GRPC 代码根目录下新建文件夹存放编译的生成文件 mkdir build
+3. open cmake gui , select gprc 根目录 as source code browse ,选择刚建立的build 文件夹作为binaries 文件夹
+4.点击config 按钮，选择生成VS2017 X64 工程
+5.点击generate 按钮
+6.点击open project
+
+基于GRPC 源代码 项目CPP example 源代码编译
+1.cmake 生成项目后会提示找不到pakege：
+修改cmakelist,将 #if(GRPC_AS_SUBMODULE) 改成 if 1
+2.使用 protoc.exe 和 cpp plugin 生成4个文件
+protoc.exe  和plugin 用法示例：
+EXECUTE_PROCESS(COMMAND
+${CMAKE_SOURCE_DIR}/thirdparty/gRPC/third_party/protobuf/cmake/win/Debug/protoc.exe
+-I ${CMAKE_SOURCE_DIR}/protos/guide
+--grpc_out=${CMAKE_SOURCE_DIR}/sync/client/src
+--grpc_out=${CMAKE_SOURCE_DIR}/sync/server/src
+--cpp_out=${CMAKE_SOURCE_DIR}/sync/client/src
+--cpp_out=${CMAKE_SOURCE_DIR}/sync/server/src
+--plugin=protoc-gen-grpc=${CMAKE_SOURCE_DIR}/thirdparty/gRPC/vsprojects/x64/Debug/grpc_cpp_plugin.exe
+${CMAKE_SOURCE_DIR}/protos/guide/hello.proto)
+示例：
+$ "E:\thirdparty\protobuf\bin\protoc.exe" -I="E:\thirdparty_source\grpc-1.6.0\examples\protos" --grpc_out="E:\thirdparty_source\grpc-1.6.0\examples\protos" --plugin=protoc-gen-grpc="E:\thirdparty\grpc\bin\grpc_cpp_plugin.exe" "E:\thirdparty_source\grpc-1.6.0\examples\protos\helloworld.proto"
+$ "E:\thirdparty\protobuf\bin\protoc.exe" -I="E:\thirdparty_source\grpc-1.6.0\examples\protos" --cpp_out="E:\thirdparty_source\grpc-1.6.0\examples\protos" "E:\thirdparty_source\grpc-1.6.0\examples\protos\helloworld.proto"
+
+protoc.exe -I=. --grpc_out=. --plugin=protoc-gen-grpc=.\grpc_cpp_plugin.exe helloworld.proto
+protoc.exe -I=. --cpp_out=. helloworld.proto
+
+.将protoc.exe 和grpc_cpp_plugin.exe 放到工程目录 :packages\Grpc.Tools.1.14.1\tools\windows_x64 文件夹
+运行命令:packages\Grpc.Tools.1.14.1\tools\windows_x64\protoc.exe -IgRPCDemo --cpp_out gRPCDemo  gRPCDemo\helloworld.proto --grpc_out gRPCDemo --plugin=protoc-gen-grpc=packages\Grpc.Tools.1.14.1\tools\windows_x64\grpc_cpp_plugin.exe
+
+3.使用proco 和plugin 生成4个文件，将4个文件copy 到工程根 目录
+4.编写makefile 生成VS工程
+5.用VS 编译生成的工程
+使用 cmake gui
+//**********************//
+route_guide 项目生成vs 工程后有错误 要手动把 helper.cc 和helper.h 加入到工程里面
+6.done
+
+总结: 使用原工程cmake list 的依赖关系，所有的依赖的代码每次都会重新编译，时间太长，所以需要研究一下基于lib 的VS 开发环境的研究
+//***************************VS 开发环境研究*****************************************************//
+尝试手动添加:
+1.vs 中直接加入GPRC 头文件 grpc\include  目录供工程头文件应用
+2.vs 中加入protobuff的头文件:grpc\third_party\protobuf\src\google\protobuf
+3.将所有生成的lib 和dll 都引用到工程
+4.编译 显示失败 N个错误 ，提示找不到引用的函数
+总结: gprc 用的头文件太多，工程里面生成的lib 和dll 有相互的依赖关系，很难全部在源代码中找到
+
+发现一个好用的工具:vcpkg 
+//***********************尝试使用vcpkg来配置GPRC 的工程*************************************//
+windows安装protoc buffer
+vcpkg 使用 https://blog.csdn.net/cjmqas/article/details/79282847
+1.install vckpg  https://github.com/Microsoft/vcpkg
+2.vcpkg install protobuf protobuf:x64-windows
+3.vcpkg install zlib:x64-windows //第一步和第2步骤安装后 有个个错误严重性	代码	说明	项目	文件	行	禁止显示状态
+无法解析的外部符号 "class grpc::CoreCodegenInterface * grpc::g_core_codegen_interface" (?g_core_codegen_interface@grpc@@3PEAVCoreCodegenInterface@1@EA)
+无法解析的外部符号 "class grpc::GrpcLibraryInterface * grpc::g_glip" (?g_glip@grpc@@3PEAVGrpcLibraryInterface@1@EA)
+4.vcpkg install grpc --triplet x64-windows-static //尝试了一下 没什么用
+//****************************************//
+运行 vcpkg list ,将刚才安装的windows-static vcpkg remove xxxxx 全部remove
+
+5.重新安装 follow below step
+>>vcpkg install protobuf protobuf:x64-windows
+>>vcpkg install GRPC:x64-windows
+显示预编译错误 是否忘加了 pch.h，这时候需要在 生成的.cc 文件中加入pch.h
+编译成功！！！！
+
+总结: 配置VC 环境 只需要安装 2个开源包:
+>>vcpkg install protobuf protobuf:x64-windows
+>>vcpkg install GRPC:x64-windows
+
+
+
+
