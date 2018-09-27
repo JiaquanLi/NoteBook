@@ -1,0 +1,4 @@
+1. package for sublime
+2.CmakeEdit: for edit cmakelists
+3.AstyleFormatter:  c++ format contorl, auto format c&c++ format
+3.ClangAutoComplete: find all in the project
